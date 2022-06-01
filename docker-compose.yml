@@ -1,0 +1,58 @@
+version: '3.7'
+
+volumes:
+    teststudy-mysql:
+        driver: 'local'
+
+networks:
+    teststudy-net:
+        driver: 'bridge'
+
+services:
+    db:
+        container_name: teststudy-db
+        image: mysql:8.0
+        volumes:
+            - teststudy-mysql:/var/lib/mysql
+        restart: always
+        tty: true
+        ports:
+            - "3000:3306"
+        environment:
+            - MYSQL_DATABASE=${DB_DATABASE}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+            - MYSQL_USER=${DB_USERNAME}
+            - MYSQL_PASSWORD=${DB_PASSWORD}
+        networks:
+            - teststudy-net
+
+    webserver:
+        container_name: teststudy-nginx
+        image: nginx:1.21.6
+        volumes:
+            - ./:/app
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+        ports:
+            - "5000:80"
+        restart: always
+        depends_on:
+            - db
+            - app
+        tty: true
+        networks:
+            - teststudy-net
+
+    app:
+        container_name: teststudy-php
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile
+        volumes:
+            - ./:/app
+        ports:
+            - "9000"
+        restart: always
+        tty: true
+        networks:
+            - teststudy-net
+
